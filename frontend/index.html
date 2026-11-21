@@ -1,0 +1,103 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Car Sales Forecast</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 520px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            margin: 6px 0 14px;
+            box-sizing: border-box;
+        }
+        button {
+            padding: 12px 20px;
+            background: #2563eb;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        #result {
+            margin-top: 20px;
+            font-size: 20px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+<h2>Next Month's Car Sales Forecast</h2>
+<p>Enter sales for the previous six months, starting with the most recent month.</p>
+
+<form id="salesForm">
+    <div id="inputs"></div>
+    <button type="submit">Predict Sales</button>
+</form>
+
+<div id="result"></div>
+
+<script>
+    const container = document.getElementById("inputs");
+
+    for (let i = 1; i <= 6; i++) {
+        container.innerHTML += `
+            <label>Month ${i} ago:</label>
+            <input type="number" id="month${i}"
+                   min="0" step="any" required>
+        `;
+    }
+
+    document.getElementById("salesForm").addEventListener(
+        "submit", async function(event) {
+            event.preventDefault();
+
+            const sales = [];
+
+            for (let i = 1; i <= 6; i++) {
+                sales.push(
+                    Number(document.getElementById(`month${i}`).value)
+                );
+            }
+
+            const result = document.getElementById("result");
+            result.textContent = "Calculating forecast...";
+
+            try {
+                const response = await fetch("/predict", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({ sales: sales })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(
+                        JSON.stringify(data.detail || data.error)
+                    );
+                }
+
+                result.textContent =
+                    "Predicted next-month sales: " +
+                    Math.round(data.prediction).toLocaleString() +
+                    " cars";
+
+            } catch (error) {
+                result.textContent =
+                    "Prediction failed: " + error.message;
+            }
+        }
+    );
+</script>
+
+</body>
+</html>
